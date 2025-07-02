@@ -2,10 +2,15 @@
 import sys
 from os.path import expanduser
 
+from eigenimages import load_images_from_folder, calculate_pca
+
 from PySide6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel,
-    QFileDialog, QVBoxLayout
+    QFileDialog, QVBoxLayout, QMessageBox
 )
+from PySide6.QtGui import QKeyEvent
+from PySide6.QtCore import Qt
+
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -46,6 +51,13 @@ class MainWindow(QWidget):
 
         self.setLayout(layout)
 
+    # Exit on Escape
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Escape:
+            QApplication.quit() 
+        else:
+            super().keyPressEvent(event)
+
     def select_input_directory(self):
         dir_path = QFileDialog.getExistingDirectory(self, 
                                                     "Select input folder", 
@@ -75,11 +87,26 @@ class MainWindow(QWidget):
             self.enable_calculate_btn()
 
     def calculate(self):
-        pass
+        try:
+            img_array, original_shape = load_images_from_folder(self._input_dir_path)
+            self.calculate_btn.setEnabled(False)
+            calculate_pca(img_array, original_shape)
+            self.calculate_btn.setEnabled(True)
+        except Exception as e:
+            self.calculate_btn.setEnabled(True)
+            self.show_exception_dialog(e)
 
     def enable_calculate_btn(self):
         if self._input_dir_ready and self._output_file_ready:
             self.calculate_btn.setEnabled(True)
+
+    def show_exception_dialog(self, exception):
+        QMessageBox.critical(
+            self,
+            "An Error Occurred",
+            f"Exception: {str(exception)}",
+            QMessageBox.Ok
+        )
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
