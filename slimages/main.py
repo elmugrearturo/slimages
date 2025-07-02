@@ -1,8 +1,15 @@
 # -*- coding:utf-8 -*-
 import sys
-from os.path import expanduser
 
-from eigenimages import load_images_from_folder, calculate_pca
+from os.path import expanduser
+from pathlib import Path
+
+from eigenimages import (load_images_from_folder, 
+                         calculate_pca,
+                         calculate_scores)
+
+import cv2
+import numpy as np
 
 from PySide6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel,
@@ -76,11 +83,11 @@ class MainWindow(QWidget):
 
         file_path, _ = QFileDialog.getSaveFileName(self, 
                                                    "Select output file",
-                                                   input_dir, 
-                                                   "PNG files(*.png);;All files (*)")
+                                                   str(Path(input_dir).parent), 
+                                                   "CSV files(*.csv);;All files (*)")
         if file_path:
-            if not file_path.endswith(".png"):
-                file_path += ".png"
+            if not file_path.endswith(".csv"):
+                file_path += ".csv"
             self.output_file_label.setText(f"Output file: {file_path}")
             self._output_file_path = file_path
             self._output_file_ready = True
@@ -88,9 +95,43 @@ class MainWindow(QWidget):
 
     def calculate(self):
         try:
-            img_array, original_shape = load_images_from_folder(self._input_dir_path)
             self.calculate_btn.setEnabled(False)
-            calculate_pca(img_array, original_shape)
+            img_array, original_shape = load_images_from_folder(self._input_dir_path)
+            single_img = calculate_pca(img_array, original_shape)
+            scores = calculate_scores(single_img)
+            QMessageBox.information(
+                self,
+                "Finished!",
+                f"Finished processing folder:\n{self._input_dir_path}",
+                QMessageBox.Ok
+            )
+            # Save outputs
+            with open(self._output_file_path, "w") as fp:
+                fp.write(f"All values,No Negatives,\n{scores[0]},{scores[1]}")
+            
+            # Save images (w/wo negatives)
+            non_negative_single_img = ((single_img > 0) * single_img)
+            
+            single_img_255 = cv2.normalize(
+                single_img, 
+                None, 
+                alpha=0, 
+                beta=255, 
+                norm_type=cv2.NORM_MINMAX).reshape(
+                    original_shape).astype(np.uint8)
+            
+            non_negative_single_img_255 = cv2.normalize(
+                non_negative_single_img, 
+                None,
+                alpha=0, 
+                beta=255, 
+                norm_type=cv2.NORM_MINMAX).reshape(
+                    original_shape).astype(np.uint8)
+
+            prefix_path = self._output_file_path[:-4]
+            cv2.imwrite(prefix_path + ".png", single_img_255)
+            cv2.imwrite(prefix_path + "_non_neg.png", non_negative_single_img_255)
+
             self.calculate_btn.setEnabled(True)
         except Exception as e:
             self.calculate_btn.setEnabled(True)

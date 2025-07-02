@@ -31,7 +31,7 @@ def load_images_from_folder(folder_path):
     # Return a numpy array
     return np.array(images), original_shape
 
-def calculate_pca(matrix, original_shape, num_components=10):
+def calculate_pca(matrix, original_shape, num_components=10, visualize=False):
     # PCA
     # TODO: select component number on the GUI
     pca = PCA(n_components=num_components)
@@ -45,21 +45,35 @@ def calculate_pca(matrix, original_shape, num_components=10):
             break
     
     eigenimages = pca.components_[:i]
+    single_eigenimage = eigenimages.sum(axis=0)
     selected_components = i+1
 
     print(f"First {i+1} components explain {explained_variance} of variance.")
 
     # Visualize
-    for i, eigenimg in enumerate(eigenimages):
-        plt.subplot(3, selected_components // 2, i + 1)
-        plt.imshow(eigenimg.reshape(original_shape), cmap='gray')
-        plt.title(f'Eigenimage {i+1}')
-        plt.axis('off')
+    if visualize:
+        for i, eigenimg in enumerate(eigenimages):
+            plt.subplot(3, selected_components // 2, i + 1)
+            plt.imshow(eigenimg.reshape(original_shape), cmap='gray')
+            plt.title(f'Eigenimage {i+1}')
+            plt.axis('off')
    
-    plt.subplot(3, selected_components // 2, selected_components + 1)
-    single_eigenimage = eigenimages.sum(axis=0)
-    plt.imshow(single_eigenimage.reshape(original_shape), cmap='gray')
-    plt.title(f'Eigenimage (all)')
+        plt.subplot(3, selected_components // 2, selected_components + 1)
+        plt.imshow(single_eigenimage.reshape(original_shape), cmap='gray')
+        plt.title(f'Eigenimage (all)')
 
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
+
+    return single_eigenimage
+
+def calculate_scores(single_eigenimage):
+    # Calculate two scores
+    # one just being a simple sum
+    # the other just the positive values
+
+    first_score = single_eigenimage.sum()
+    second_score = ((single_eigenimage > 0) * single_eigenimage).sum()
+
+    return (first_score, 
+            second_score) 
