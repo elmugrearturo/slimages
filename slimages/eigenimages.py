@@ -10,9 +10,10 @@ from sklearn.decomposition import PCA
 
 import matplotlib.pyplot as plt
 
-def load_images_from_folder(folder_path):
+def load_images_from_folder(folder_path, resize_to_percentage=0.1):
     images = []
     original_shape = ()
+    small_shape = ()
     for filename in os.listdir(folder_path):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
             img_path = os.path.join(folder_path, filename)
@@ -21,7 +22,12 @@ def load_images_from_folder(folder_path):
                 continue
             if original_shape == ():
                 original_shape = img.shape
-            images.append(img.flatten())
+                small_shape = (int(original_shape[0] * resize_to_percentage),
+                               int(original_shape[1] * resize_to_percentage))
+                print(f"Original size: {original_shape}")
+                print(f"Processing size: {small_shape}")
+            small_img = cv2.resize(img, small_shape[::-1])
+            images.append(small_img.flatten())
     
     # Check that all images are of the same size
     img_size = images[0].shape[0]
@@ -29,9 +35,9 @@ def load_images_from_folder(folder_path):
         assert img.shape[0] == img_size
     
     # Return a numpy array
-    return np.array(images), original_shape
+    return np.array(images), original_shape, small_shape
 
-def calculate_pca(matrix, original_shape, num_components=10, visualize=False):
+def calculate_pca(matrix, shape, num_components=10, visualize=False):
     # PCA
     # TODO: select component number on the GUI
     pca = PCA(n_components=num_components)
@@ -54,12 +60,12 @@ def calculate_pca(matrix, original_shape, num_components=10, visualize=False):
     if visualize:
         for i, eigenimg in enumerate(eigenimages):
             plt.subplot(3, selected_components // 2, i + 1)
-            plt.imshow(eigenimg.reshape(original_shape), cmap='gray')
+            plt.imshow(eigenimg.reshape(shape), cmap='gray')
             plt.title(f'Eigenimage {i+1}')
             plt.axis('off')
    
         plt.subplot(3, selected_components // 2, selected_components + 1)
-        plt.imshow(single_eigenimage.reshape(original_shape), cmap='gray')
+        plt.imshow(single_eigenimage.reshape(shape), cmap='gray')
         plt.title(f'Eigenimage (all)')
 
         plt.tight_layout()

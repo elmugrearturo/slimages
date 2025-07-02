@@ -96,8 +96,8 @@ class MainWindow(QWidget):
     def calculate(self):
         try:
             self.calculate_btn.setEnabled(False)
-            img_array, original_shape = load_images_from_folder(self._input_dir_path)
-            single_img = calculate_pca(img_array, original_shape)
+            img_array, original_shape, small_shape = load_images_from_folder(self._input_dir_path)
+            single_img = calculate_pca(img_array, small_shape)
             scores = calculate_scores(single_img)
             QMessageBox.information(
                 self,
@@ -118,7 +118,8 @@ class MainWindow(QWidget):
                 alpha=0, 
                 beta=255, 
                 norm_type=cv2.NORM_MINMAX).reshape(
-                    original_shape).astype(np.uint8)
+                    small_shape).astype(np.uint8)
+            single_img_255 = cv2.resize(single_img_255, original_shape[::-1])
             
             non_negative_single_img_255 = cv2.normalize(
                 non_negative_single_img, 
@@ -126,7 +127,10 @@ class MainWindow(QWidget):
                 alpha=0, 
                 beta=255, 
                 norm_type=cv2.NORM_MINMAX).reshape(
-                    original_shape).astype(np.uint8)
+                    small_shape).astype(np.uint8)
+            non_negative_single_img_255 = cv2.resize(
+                non_negative_single_img_255, 
+                original_shape[::-1])
 
             prefix_path = self._output_file_path[:-4]
             cv2.imwrite(prefix_path + ".png", single_img_255)
