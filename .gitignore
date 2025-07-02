@@ -92,6 +92,8 @@ ENV/
 # Hidden files
 .*
 
-# pycache
+# PNG files
+*.png
 
+# pycache
 __pycache__/
