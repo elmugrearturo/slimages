@@ -91,6 +91,7 @@ class BatchWindow(QWidget):
                       subfolder in folder_names]
 
         self.calculate_btn.setEnabled(False)
+        csv_contents = "Folder,All values,No Negatives\n"
         for fname, subdir in zip(folder_names, subfolders):
             print(f"Processing folder {subdir}...")
             try:
@@ -101,10 +102,8 @@ class BatchWindow(QWidget):
                 single_img = calculate_pca(img_array, small_shape)
                 scores = calculate_scores(single_img)
                 
-                # Save outputs
-                with open(os.path.join(self._output_dir_path, f"{fname}.csv"), 
-                          "w") as fp:
-                    fp.write(f"All values,No Negatives,\n{scores[0]},{scores[1]}")
+                # Save to csv contents
+                csv_contents += f"{fname},{scores[0]},{scores[1]}\n"
                 
                 # Save images (w/wo negatives)
                 non_negative_single_img = ((single_img > 0) * single_img)
@@ -135,6 +134,12 @@ class BatchWindow(QWidget):
 
             except Exception as e:
                 self.show_exception_dialog(e)
+        
+        # Save outputs
+        with open(os.path.join(self._output_dir_path, "Results.csv"), 
+                  "w") as fp:
+            fp.write(csv_contents.strip())
+        
         QMessageBox.information(
             self,
             "Finished!",
