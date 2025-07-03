@@ -13,7 +13,8 @@ import numpy as np
 
 from PySide6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel,
-    QFileDialog, QVBoxLayout, QMessageBox
+    QFileDialog, QVBoxLayout, QMessageBox,
+    QCheckBox
 )
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtCore import Qt
@@ -34,6 +35,8 @@ class BatchWindow(QWidget):
         # Buttons
         self.select_input_dir_btn = QPushButton("Select input folder")
         self.calculate_btn = QPushButton("Calculate")
+        self.checkbox_btn = QCheckBox("Scale images statically (100, 100)")
+        self.checkbox_btn.setChecked(True)
 
         # Deactivate button until path is ready
         self.calculate_btn.setEnabled(False)
@@ -46,6 +49,7 @@ class BatchWindow(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.select_input_dir_btn)
         layout.addWidget(self.input_dir_label)
+        layout.addWidget(self.checkbox_btn)
         layout.addWidget(self.calculate_btn)
 
         self.setLayout(layout)
@@ -91,7 +95,9 @@ class BatchWindow(QWidget):
             print(f"Processing folder {subdir}...")
             try:
                 img_array, original_shape, small_shape = \
-                        load_images_from_folder(subdir)
+                        load_images_from_folder(
+                            subdir,
+                            static_resizing=self.checkbox_btn.isChecked())
                 single_img = calculate_pca(img_array, small_shape)
                 scores = calculate_scores(single_img)
                 
@@ -129,6 +135,12 @@ class BatchWindow(QWidget):
 
             except Exception as e:
                 self.show_exception_dialog(e)
+        QMessageBox.information(
+            self,
+            "Finished!",
+            f"Finished processing folder:\n{self._input_dir_path}",
+            QMessageBox.Ok
+        )
         self.calculate_btn.setEnabled(True)
 
     def show_exception_dialog(self, exception):

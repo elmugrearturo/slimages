@@ -10,7 +10,8 @@ from sklearn.decomposition import PCA
 
 import matplotlib.pyplot as plt
 
-def load_images_from_folder(folder_path, resize_to_percentage=0.1):
+def load_images_from_folder(folder_path, resize_to_percentage=0.1,
+                            static_resizing=False):
     images = []
     original_shape = ()
     small_shape = ()
@@ -22,8 +23,12 @@ def load_images_from_folder(folder_path, resize_to_percentage=0.1):
                 continue
             if original_shape == ():
                 original_shape = img.shape
-                small_shape = (int(original_shape[0] * resize_to_percentage),
-                               int(original_shape[1] * resize_to_percentage))
+                if static_resizing:
+                    small_shape = (100, 100)
+                else:
+                    small_shape = (
+                        int(original_shape[0] * resize_to_percentage),
+                        int(original_shape[1] * resize_to_percentage))
                 print(f"Original size: {original_shape}")
                 print(f"Processing size: {small_shape}")
             small_img = cv2.resize(img, small_shape[::-1])
